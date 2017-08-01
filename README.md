@@ -64,7 +64,36 @@
     //- getMaxAnisotropy() 
     // - getMaxPrecision ()
     //- logarithmicDepthBuffer - true 如果logarithmicdepthbuffer设置在构造函数的真实语境支持ext_frag_depth延伸
-    、、
+    // - 
     var renderer = new THREE.WebGLRenderer();
 
 ``` 
+
+
+## TextureLoader(manager)
+```javascript
+    // instantiate a loader
+    var loader = new THREE.TextureLoader();
+
+    // load a resource
+    loader.load(
+        // resource URL
+        'textures/land_ocean_ice_cloud_2048.jpg',
+        // Function when resource is loaded
+        function ( texture ) {
+            // do something with the texture
+            var material = new THREE.MeshBasicMaterial( {
+                map: texture
+             } );
+        },
+        // Function called when download progresses
+        function ( xhr ) {
+            console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+        },
+        // Function called when download errors
+        function ( xhr ) {
+            console.log( 'An error happened' );
+        }
+    );
+```
+
