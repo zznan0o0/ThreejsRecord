@@ -11,33 +11,137 @@
 </head>
 <body>
   <script type="text/javascript">
-  var scene = new THREE.Scene();
+  var camera, scene, renderer;
+  var light, object;
 
-  var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
-  camera.position.set(0, 0, 100);
-  camera.lookAt(new THREE.Vector3(0, 0, 0));
+  camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
+  scene = new THREE.Scene();
+  //无方向的光
+  scene.add(new THREE.AmbientLight( 0x404040 ));
 
-  var renderer = new THREE.WebGLRenderer();
+  //有方向的光
+  light = new THREE.DirectionalLight( 0xffffff);
+  light.position.set(0, 1, 0);
+  scene.add(light);
+
+  var map = new THREE.TextureLoader().load('textures/UV_Grid_Sm.jpg');
+  //RepeatWrapping:重复包装，ClampToEdgeWrapping：夹边包边，MirroredRepeatWrapping：镜像重复包装
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.anisotropy = 16;
+  //MeshLambertMaterial: 兰伯特网孔材料,一种非发光材料（兰伯特）的表面，计算每个顶点。
+  var material = new THREE.MeshLambertMaterial( { map: map, side: THREE.DoubleSide } );
+
+  //创建球体几何模型
+  object = new THREE.Mesh(new THREE.SphereGeometry( 75, 20, 10 ), material);
+  object.position.set(-400, 0, 200);
+  scene.add(object);
+
+  //二十面体几何模型
+  object = new THREE.Mesh(new THREE.IcosahedronGeometry( 75, 1 ), material);
+  object.position.set(-200, 0, 200);
+  scene.add(object);
+
+  //八面体几何模型
+  object = new THREE.Mesh(new THREE.OctahedronGeometry( 75, 2 ), material);
+  object.position.set(0, 0, 200);
+  scene.add(object);
+
+  //四面体几何模型
+  object = new THREE.Mesh(new THREE.TetrahedronGeometry( 75, 0 ), material);
+  object.position.set(200, 0, 200);
+  scene.add(object);
+
+  //平面模型
+  object = new THREE.Mesh(new THREE.PlaneGeometry( 100, 100, 4, 4 ), material);
+  object.position.set(-400, 0, 200);
+  scene.add(object);
+
+  //盒子模型
+  object = new THREE.Mesh(new THREE.BoxGeometry( 100, 100, 100, 4, 4, 4 ), material);
+  object.position.set(-200, 0, 0);
+  scene.add(object);
+
+  //圆形模型
+  object = new THREE.Mesh( new THREE.CircleGeometry( 50, 20, 0, Math.PI * 2 ), material );
+  object.position.set( 0, 0, 0 );
+  scene.add( object );
+
+  //环状模型
+  object = new THREE.Mesh( new THREE.RingGeometry( 10, 50, 20, 5, 0, Math.PI * 2 ), material );
+  object.position.set( 200, 0, 0 );
+  scene.add( object );
+
+  //圆柱体模型
+  object = new THREE.Mesh( new THREE.CylinderGeometry( 25, 75, 100, 40, 5 ), material );
+  object.position.set( 400, 0, 0 );
+  scene.add( object );
+
+  //二维向量
+  var points = [];
+
+  for ( var i = 0; i < 50; i ++ ) {
+    points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * Math.sin( i * 0.1 ) * 15 + 50, ( i - 5 ) * 2 ) );
+  }
+
+  //用于生成轴对称网格的类。可能的用途包括甜甜圈，管道，花瓶等围绕Y轴旋转的车床。
+  object = new THREE.Mesh( new THREE.LatheGeometry( points, 20 ), material );
+  object.position.set( -400, 0, -200 );
+  scene.add( object );
+
+  //圆环面几何模型
+  object = new THREE.Mesh( new THREE.TorusGeometry( 50, 20, 20, 20 ), material );
+  object.position.set( -200, 0, -200 );
+  scene.add( object );
+
+  //环面纽结模型
+  object = new THREE.Mesh( new THREE.TorusKnotGeometry( 50, 10, 50, 20 ), material );
+  object.position.set( 0, 0, -200 );
+  scene.add( object );
+
+  //轴辅助
+  object = new THREE.AxisHelper( 50 );
+  object.position.set( 200, 0, -200 );
+  scene.add( object );
+
+  //箭头辅助
+  object = new THREE.ArrowHelper( new THREE.Vector3( 0, 1, 0 ), new THREE.Vector3( 0, 0, 0 ), 50 );
+  object.position.set( 400, 0, -200 );
+  scene.add( object );
+
+  renderer = new THREE.WebGLRenderer( {antialias: true} );
+  renderer.setPixelRatio( window.devicePixelRatio );
+
   renderer.setSize(window.innerWidth, window.innerHeight);
+
   document.body.appendChild(renderer.domElement);
 
-  var material = new THREE.LineBasicMaterial( {color: 0x000ff});
+  
 
-  var geometry = new THREE.Geometry();
+  var callback = {
+    onWindowResize: function(){
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize( window.innerWidth, window.innerHeight );
+    },
 
-  geometry.vertices.push(
-    new THREE.Vector3( -10,  10, 0 ),
-    new THREE.Vector3( -10, -10, 0 ),
-    new THREE.Vector3(  10, -10, 0 )
-  );
+    animate: function(){
+      var timer = Date.now() * 0.0001;
+      camera.position.x = Math.cos( timer ) * 800;
+      camera.position.z = Math.sin( timer ) * 800;
+      camera.lookAt( scene.position );
+      for ( var i = 0, l = scene.children.length; i < l; i ++ ) {
+        var object = scene.children[ i ];
+        object.rotation.x = timer * 5;
+        object.rotation.y = timer * 2.5;
+      }
+      renderer.render( scene, camera );
 
-  geometry.faces.push( new THREE.Face3( 0, 1, 2 ) );
+      requestAnimationFrame( callback.animate );
+    }
+  }
 
-  geometry.computeBoundingSphere();
-
-
-  //scene.add(geometry);
-  renderer.render(scene, camera);
+  window.addEventListener('resize', callback.onWindowResize, false);
+  callback.animate();
   </script>
 </body>
 </html>

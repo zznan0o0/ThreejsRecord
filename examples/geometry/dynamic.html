@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+
+  window.onload = function(){
+    var container, stats;
+    var camera, controls, scene, renderer;
+    var mesh, texture, geometry, materail;
+    var worldWidth = worldDepth = 128;
+
+    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
+    camera.position.y = 300;
+    camera.position.x = 300;
+    var clock = new THREE.Clock();
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2( 0xaaccff, 0.0007 );
+    //平面
+    geometry = new THREE.PlaneGeometry( 20000, 20000, worldWidth - 1, worldDepth - 1 );
+    geometry.rotateX(-Math.PI / 2);
+
+    for(var i = 0, l = geometry.vertices.length; i < l; i++){
+      geometry.vertices[i].y = 35 * Math.sin(i / 2);
+    }
+
+    var texture = new THREE.TextureLoader().load('../textures/water.jpg');
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(5, 5);
+
+    materail = new THREE.MeshBasicMaterial( {color: 0xa3dbfa, map: texture} );
+    mesh = new THREE.Mesh(geometry, materail);
+    scene.add(mesh);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(0xaaccff);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    document.body.appendChild(renderer.domElement);
+
+    renderer.render(scene, camera);
+    animate();
+    function animate(){
+      requestAnimationFrame(animate);
+
+      var time = clock.getElapsedTime() * 10;
+      for(var i = 0, l = geometry.vertices.length; i < l; i++){
+        geometry.vertices[i].y = 35 * Math.sin(i / 5 + (time + i) / 7);
+      }
+
+      mesh.geometry.verticesNeedUpdate = true;
+      renderer.render(scene, camera);
+    }
+  }
+  </script>
+</body>
+</html>

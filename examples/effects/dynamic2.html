@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+    canvas { width: 100%; height: 100%; }
+  </style>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    var camera, scene, renderer;
+    var cube, sphere, torus, material;
+
+    var count = 0, cubeCamera1, cubeCamera2;
+
+    var lon = lat = phi = theta = 0;
+    var onPointerDownPointerX, onPointerDownPointerY, onPointerDownLon, onPointerDownLat;
+
+    var textureLoader = new THREE.TextureLoader();
+
+    textureLoader.load('../textures/2294472375_24a3b8ef46_o.jpg', function(texture){
+      //UV映射是将二维图像投影到三维模型表面进行纹理映射的三维建模过程。
+      texture.mapping = THREE.UVMapping;
+
+      init(texture);
+      animate();
+    })
+
+    function init(texture){
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+      scene = new THREE.Scene();
+
+      var mesh = new THREE.Mesh(new THREE.SphereBufferGeometry(500, 32, 16), 
+        new THREE.MeshBasicMaterial( {map: texture} ));
+
+      mesh.scale.x = -1;
+      scene.add(mesh);
+
+      renderer = new THREE.WebGLRenderer( {antialias: true} );
+      renderer.setPixelRatio(window.devicePiexlRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      cubeCamera1 = new THREE.CubeCamera( 1, 1000, 256 );
+      /*magFilter属性：指定纹理如何放大。默认值：THREE.LinearFilter 
+      minFilter属性：指定纹理如何缩小。默认值：THREE.LinearMipMapLinearFilter
+
+      属性值： 
+      THREE.NearestFilter 最邻近过滤 
+      THREE.LinearFilter 线性过滤
+
+      mipmap：一个mipmap是一组纹理图片，每个图片的尺寸都是前一张图片的一半。这些图片实在加载纹理时创建的，可以生成较平滑的过滤效果。
+
+      mipmap的属性值：
+
+      THREE.NearestMipMapNearestFilter：选择最贴近目标解析度的mipmap，然后使用最邻近过滤原则。 
+      THREE.NearestMipMapLinarFilter：选择层次最近的两个mipmap，然后在这两层之间使用最邻近过滤原则获取两个中间值，然后这两个中间值传递给线性过滤器，以获得最终效果。 
+      THREE.LinearMipMapNearestFilter：选择最贴近目标解析度的mipmap，然后使用线性过滤原则。 
+      THREE.LinearMipMapLinearFilter：选择层次最近的两个mipmap，然后在这两层之间使用线性过滤原则获得两个中间值，然后这两个中间值传递给线性过滤器，以获得最终结果。*/
+      cubeCamera1.renderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
+      scene.add(cubeCamera1);
+
+      cubeCamera2 = new THREE.CubeCamera(1, 1000, 256);
+      cubeCamera2.renderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
+      scene.add(cubeCamera2);
+
+      document.body.appendChild(renderer.domElement);
+
+      //envMap设置环境贴图
+      material = new THREE.MeshBasicMaterial( {envMap: cubeCamera2.renderTarget.texture} );
+      sphere = new THREE.Mesh(new THREE.IcosahedronGeometry( 20, 3 ), material);
+      scene.add(sphere);
+
+      cube = new THREE.Mesh(new THREE.BoxBufferGeometry(20, 20, 20), material);
+      scene.add(cube);
+
+      //圆环面缓存模型
+      torus = new THREE.Mesh(new THREE.TorusKnotBufferGeometry(10, 5, 100, 25), material);
+      scene.add(torus);
+
+      document.addEventListener('mousedown', onDocumentMouseDown, false);
+      document.addEventListener('wheel', onDocumentMouseWheel, false);
+      window.addEventListener('resize', onWindowResized, false);
+    }
+
+    function onWindowResized(e){
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }
+
+    function onDocumentMouseDown(e){
+      e.preventDefault();
+
+      onPointerDownPointerX = e.clientX;
+      onPointerDownPointerY = e.clientY;
+
+      onPointerDownLon = lon;
+      onPointerDownLat = lat;
+
+      document.addEventListener('mousemove', onDocumentMouseMove, false);
+      document.addEventListener('mouseup', onDocumentMouseUp, false);
+    }
+
+    function onDocumentMouseMove(e){
+      lon = (e.clientX - onPointerDownPointerX) * 0.1 + onPointerDownLon;
+      lat = (e.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
+    }
+
+    function onDocumentMouseUp(e){
+      document.removeEventListener('mousemove', onDocumentMouseMove, false);
+      document.removeEventListener('mouseup', onDocumentMouseUp, false);
+    }
+
+    function onDocumentMouseWheel(e){
+      camera.fov += e.deltaY * 0.05;
+      camera.updateProjectionMatrix();
+    }
+
+    function animate(){
+      requestAnimationFrame(animate);
+      render();
+    }
+
+    function render(){
+      var time = Date.now();
+
+      lon += 0.15;
+
+      lat = Math.max(-85, Math.min(85, lat));
+      phi = THREE.Math.degToRad(90 - lat);
+      theta = THREE.Math.degToRad(lon);
+
+      cube.position.x = Math.cos(time * 0.001) * 30;
+      cube.position.y = Math.sin(time * 0.001) * 30;
+      cube.position.z = Math.sin(time * 0.001) * 30;
+      cube.rotation.x += 0.02;
+      cube.rotation.y += 0.03;
+
+      torus.position.x = -Math.cos(time * 0.001) * 30;
+      torus.position.y = -Math.sin(time * 0.001) * 30;
+      torus.position.z = -Math.sin(time * 0.001) * 30;
+      torus.rotation.x += 0.02;
+      torus.rotation.y += 0.03;
+
+      camera.position.x = 100 * Math.sin(phi) * Math.cos(theta);
+      camera.position.y = 100 * Math.cos(phi);
+      camera.position.z = 100 * Math.sin(phi) * Math.sin(theta);
+      camera.lookAt(scene.position);
+
+      sphere.visible = false;
+
+      if(count % 2 === 0){
+        material.envMap = cubeCamera1.renderTarget.texture;
+        cubeCamera2.updateCubeMap(renderer, scene);
+      }
+      else{
+        material.envMap = cubeCamera2.renderTarget.texture;
+        cubeCamera1.updateCubeMap(renderer, scene);
+      }
+
+      count ++;
+      sphere.visible = true;
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
