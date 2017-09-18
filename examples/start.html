@@ -19,8 +19,15 @@
   document.body.appendChild(renderer.domElement);
 
   var geometry = new THREE.BoxGeometry(1, 1, 1);
-  var material = new THREE.MeshBasicMaterial( {color: 0x00ff00});
-  var cube = new THREE.Mesh( geometry, material);
+  //var material = new THREE.MeshBasicMaterial( {color: 0x00ff00});
+  var materials = [];
+  materials.push(new THREE.MeshBasicMaterial( {color: 0xFF0000} ))
+  materials.push(new THREE.MeshBasicMaterial( {color: 0xFBFF00} ))
+  materials.push(new THREE.MeshBasicMaterial( {color: 0x0008FF} ))
+  materials.push(new THREE.MeshBasicMaterial( {color: 0x33FF00} ))
+  materials.push(new THREE.MeshBasicMaterial( {color: 0x00DCFF} ))
+  materials.push(new THREE.MeshBasicMaterial( {color: 0x0400FF} ))
+  var cube = new THREE.Mesh( geometry, materials);
 
   scene.add(cube);
   camera.position.z = 5;

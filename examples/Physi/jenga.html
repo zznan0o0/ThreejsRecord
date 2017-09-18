@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+  <script type="text/javascript" src="../../public/physi/physi.js"></script>
+  <script type="text/javascript" src="../../public/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    Physijs.scripts.worker = '../../public/physi/physijs_worker.js';
+    Physijs.scripts.ammo = '../../public/physi/ammo.js';
+
+    var renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMapSoft = true;
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
+    //renderer.setClearColor(0xffffff)
+    document.body.appendChild(renderer.domElement);
+    
+    //var scene = new THREE.Scene();
+    //physi scene
+    var scene = new Physijs.Scene({ fixedTimeStep: 1 / 120 })
+    scene.setGravity(new THREE.Vector3(0, -30, 0));
+    scene.addEventListener('update', function(){
+      if ( meshs.selected_block !== null ) {
+          
+          handleEvents.vector3.copy(handleEvents.mousePosition).add(handleEvents.blockOffset).sub(meshs.selected_block.position).multiplyScalar(5);
+          handleEvents.vector3.y = 0;
+          meshs.selected_block.setLinearVelocity(handleEvents.vector3);
+
+          handleEvents.vector3.set(0, 0, 0);
+
+          for(var i = 0; i < meshs.blocks.length; i++){
+            meshs.blocks[i].applyCentralImpulse(handleEvents.vector3);
+          }
+          
+          
+        }
+
+        scene.simulate( undefined, 1 );
+    })
+   
+    scene.simulate();
+
+    var camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera.position.set( 25, 20, 25 );
+    camera.lookAt(new THREE.Vector3( 0, 0, 0 ))
+    scene.add(camera);
+    /*var controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls.maxPolarAngle = Math.PI * 0.5;
+    controls.minDistance = 1;
+    controls.maxDistance = 7500;*/
+
+    var ambientLight = new THREE.AmbientLight(0x444444);
+    scene.add(ambientLight);
+
+    var directionalLight = new THREE.DirectionalLight( 0xffffff);
+    directionalLight.position.set(20, 22, 6);
+    directionalLight.target.position.copy(scene.position);
+    //castshadow投影
+    directionalLight.castShadow = true;
+    directionalLight.shadow.camera.left = directionalLight.shadow.camera.top = -30;
+    directionalLight.shadow.camera.right = directionalLight.shadow.camera.bottom = 30;
+    directionalLight.shadow.camera.near = 20;
+    directionalLight.shadow.camera.far = 200;
+    directionalLight.shadow.bias = -0.001;
+    directionalLight.shadow.mapSize.width = directionalLight.shadow.mapSize.height = 2048;
+    scene.add(directionalLight);
+
+    //var directionalLightHelper = new THREE.DirectionalLightHelper( directionalLight, 5 );
+    //scene.add(directionalLightHelper);
+
+    var loader = new THREE.TextureLoader();
+    var textures = {
+      wood: loader.load('../textures/wood/wood.jpg'),
+      plywood: loader.load('../textures/wood/plywood.jpg')
+    }
+    var materials = {
+      tableMaterial: new THREE.MeshLambertMaterial({map: textures.wood}),
+      blockMaterial: new THREE.MeshLambertMaterial({map: textures.plywood})
+    }
+
+    materials.tableMaterial.map.wrapS = materials.tableMaterial.map.wrapT = THREE.RepeatWrapping;
+    //materials.tableMaterial.map.repeat.set( 5, 5 );
+
+    var geometrys = {
+      table: new THREE.BoxGeometry(50, 1, 50),
+      intersectPlane: new THREE.PlaneGeometry( 150, 150 )
+    }
+
+    var meshs = {
+      table: new Physijs.BoxMesh(geometrys.table, materials.tableMaterial, 0, { restitution: .2, friction: .8 }),
+      blocks: [],
+      selected_block: null,
+      intersectPlane: new THREE.Mesh(geometrys.intersectPlane, new THREE.MeshBasicMaterial({ opacity: 0, transparent: true }))
+    }
+    
+    meshs.table.position.y = -1;
+    meshs.table.receiveShadow = true;
+    scene.add(meshs.table);
+
+    meshs.intersectPlane.rotation.x = Math.PI / -2;
+    
+
+    
+    window.addEventListener('load', function(){
+      createBlocks();
+      renderer.render(scene, camera);
+      scene.add(meshs.intersectPlane);
+      render();
+      //renderer.domElement.addEventListener( 'mousedown', handleEvents.handleMouseDown );
+      //renderer.domElement.addEventListener( 'mousemove', handleMouseMove );
+      //renderer.domElement.addEventListener( 'mouseup', handleMouseUp );
+    }, false);
+
+    handleEvents = {
+      vector3: new THREE.Vector3(),
+      mousePosition: new THREE.Vector3(),
+      blockOffset: new THREE.Vector3,
+
+      handleMouseDown: function(event){
+        handleEvents.vector3.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 1);
+        handleEvents.vector3.unproject(camera);
+        var raycaster = new THREE.Raycaster(camera.position, handleEvents.vector3.sub(camera.position).normalize());
+        var intersections = raycaster.intersectObjects(meshs.blocks);
+        if(intersections.length > 0){
+          meshs.selected_block = intersections[0].object;
+          handleEvents.vector3.set(0, 0, 0);
+          meshs.selected_block.setAngularFactor(handleEvents.vector3);
+          meshs.selected_block.setAngularVelocity(handleEvents.vector3);
+          meshs.selected_block.setLinearFactor(handleEvents.vector3);
+          meshs.selected_block.setLinearVelocity(handleEvents.vector3);
+
+          handleEvents.mousePosition.copy(intersections[0].point);
+          handleEvents.blockOffset.subVectors(meshs.selected_block.position, handleEvents.mousePosition);
+          meshs.intersectPlane.position.y = handleEvents.mousePosition.y;
+        }
+      },
+
+      handleMouseMove: function(event){
+
+        if(meshs.selected_block !== null){
+          handleEvents.vector3.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 1);
+          handleEvents.vector3.unproject(camera);
+          var raycaster = new THREE.Raycaster(camera.position, handleEvents.vector3.sub(camera.position).normalize());
+
+          var intersections = raycaster.intersectObject(meshs.intersectPlane);
+          handleEvents.mousePosition.copy(intersections[0].point);
+          //meshs.selected_block.position.copy(handleEvents.mousePosition)
+        }
+      },
+
+      handleMouseUp: function(e){
+        if(meshs.selected_block !== null){
+          handleEvents.vector3.set(1, 1, 1);
+          meshs.selected_block.setAngularFactor(handleEvents.vector3);
+          meshs.selected_block.setLinearFactor(handleEvents.vector3);
+          meshs.selected_block = null;
+        }
+      }
+    }
+
+    renderer.domElement.addEventListener('mousedown', handleEvents.handleMouseDown, false);
+    renderer.domElement.addEventListener('mousemove', handleEvents.handleMouseMove, false);
+    renderer.domElement.addEventListener('mouseup', handleEvents.handleMouseUp, false);
+
+    
+
+    function render(){
+      renderer.render(scene, camera);
+      requestAnimationFrame(render);
+    }
+
+
+    function createBlocks(){
+      var length = 6, width = 1.8, height = 1, offset = 2;
+      for(var i = 0; i < 16; i++){
+        for(var j = 0; j < 3; j++){
+          var block = new THREE.BoxGeometry(length, height, width);
+          var mesh = new Physijs.BoxMesh(block, materials.blockMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.position.y = height * i;
+          if(i%2 !== 0){
+            mesh.position.x = (j-1) * offset;
+            mesh.rotation.y = Math.PI / 2.01;
+          }
+          else{
+            mesh.position.z = (j-1) * offset;
+          }
+
+          meshs.blocks.push(mesh);
+          scene.add(mesh)
+        }
+      }
+    }
+
+
+  </script>
+</body>
+</html>

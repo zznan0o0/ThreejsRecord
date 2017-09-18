@@ -281,6 +281,7 @@ function simulate( time ) {
 	ballPosition.z = - Math.sin( Date.now() / 600 ) * 90 ; //+ 40;
 	ballPosition.x = Math.cos( Date.now() / 400 ) * 70;
 
+	var sphere = sphere || false;
 	if ( sphere.visible ) {
 
 		for ( particles = cloth.particles, i = 0, il = particles.length; i < il; i ++ ) {

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>three.js webgl - cloth simulation</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <META HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+    <META HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+    <META HTTP-EQUIV="expires" CONTENT="0">
+    <style>
+      body{ margin: 0; overflow: hidden;}
+    </style>
+  </head>
+
+  <body>
+    <script src="../../public/three.min.js"></script>
+    <script src="../../public/Cloth.js"></script>
+    <script type="text/javascript" src="../../public/controls/OrbitControls.js"></script>
+    <script type="text/javascript" src="./CameraConstrol.js"></script>
+
+    <script type="x-shader/x-fragment" id="fragmentShaderDepth">
+      #include <packing>
+      uniform sampler2D texture;
+      varying vec2 vUV;
+      void main() {
+        vec4 pixel = texture2D( texture, vUV );
+        if ( pixel.a < 0.5 ) discard;
+        gl_FragData[ 0 ] = packDepthToRGBA( gl_FragCoord.z );
+      }
+    </script>
+
+    <script type="x-shader/x-vertex" id="vertexShaderDepth">
+      varying vec2 vUV;
+      void main() {
+        vUV = 0.75 * uv;
+        vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    </script>
+
+    <script>
+      initCloth();
+      //cloth 的链接点
+      var pins = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+      function initCloth(){
+        var scene = new THREE.Scene();
+        //Fog( hex, near, far )
+        scene.fog = new THREE.Fog(0xcce0ff, 500, 3000)
+        scene.background = new THREE.Color(0xcce0ff);
+
+        var camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 10000 );
+        camera.position.set(1000, 50, 1500);
+        scene.add(camera);
+
+        var renderer = new THREE.WebGLRenderer({ antialias: true } );
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        //伽马值输入输出
+        renderer.gammaInput = true;
+        renderer.gammaOutput = true;
+        //实现阴影贴图（或阴影映射）的组件的引用
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        var controls = new THREE.OrbitControls( camera, renderer.domElement );
+        controls.maxPolarAngle = Math.PI * 0.5;
+        controls.minDistance = 1000;
+        controls.maxDistance = 7500;
+
+
+        var ambientLight = new THREE.AmbientLight( 0x666666 );
+        scene.add(ambientLight);
+        //DirectionalLight( hex, intensity )
+        var directionalLight = new THREE.DirectionalLight( 0xdfebff, 1.75 );
+        directionalLight.position.set(50, 200, 100);
+        //乘标量
+        directionalLight.position.multiplyScalar(1.3);
+        //投射动态阴影 需要检测资源开销比较大
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.left = directionalLight.shadow.camera.bottom = -300;
+        directionalLight.shadow.camera.top = directionalLight.shadow.camera.right = 300;
+        directionalLight.shadow.camera.far = 1000;
+        scene.add(directionalLight);
+
+        var loader = new THREE.TextureLoader();
+        var clothTexture = loader.load('../textures/patterns/circuit_pattern.png');
+        //表示边缘被夹到纹理单元（texels）的外边界 S,T方向覆盖模式 RepeatWrapping 重复 MirroredRepeatWrapping镜像
+        clothTexture.wrapS = clothTexture.wrapT = THREE.RepeatWrapping;
+        //表示纹理的各向异性。沿纹理单元密度最高方向的轴线所取样本数。默认情况下，这个值为1。较高的值比基础MipMap要更清晰，但需要更多的采样。 使用renderer.getMaxAnisotropy()方法来找到GPU最大有效各向异性值；这个值通常是2的幂次方。
+        clothTexture.anisotropy = renderer.getMaxAnisotropy();
+
+        //有光泽的材料 Phong网孔材料
+        var clothMaterial = new THREE.MeshPhongMaterial({
+          specular: 0x030303, //高亮颜色
+          map: clothTexture, //贴图
+          side: THREE.DoubleSide, //定义表面两侧的哪一个将呈现 - 前面，后面或双面。
+          alphaTest: 0.5 
+        });
+
+        window.clothGeometry = new THREE.ParametricGeometry(clothFunction, cloth.w, cloth.h);
+        //动态
+        clothGeometry.dynamic = true;
+
+        var uniform = {texture: {value: clothTexture}};
+        var vertexShader = document.getElementById('vertexShaderDepth').textContent;
+        var fragmentShader = document.getElementById('fragmentShaderDepth').textContent;
+
+        var clothMesh = new THREE.Mesh(clothGeometry, clothMaterial);
+        clothMesh.position.set(0, 0, 0);
+        clothMesh.castShadow = true;
+        scene.add(clothMesh);
+        clothMesh.customDepthMaterial = new THREE.ShaderMaterial({
+          uniforms: uniform,
+          vertexShader: vertexShader,
+          fragmentShader: fragmentShader,
+          side: THREE.DoubleSide
+        });
+
+        var groundTexture = loader.load('../textures/terrain/grasslight-big.jpg');
+        groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(25, 25);
+        groundTexture.anisotropy = renderer.getMaxAnisotropy();
+
+        var groundMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, specular: 0x111111, map: groundTexture});
+        var groundMesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(20000, 20000), groundMaterial);
+        groundMesh.position.y = -250;
+        groundMesh.rotation.x = -Math.PI / 2;
+        ////表示这个物体是可以接受（显示）阴影的
+        groundMesh.receiveShadow = true;
+        scene.add(groundMesh);
+
+        var poleGeometry = new THREE.BoxGeometry(5, 375, 5);
+        var poleMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, specular: 0x111111, shininess: 100});
+
+        var poleMesh = new THREE.Mesh(poleGeometry, poleMaterial);
+        poleMesh.position.x = -125;
+        poleMesh.position.y = -62;
+        poleMesh.receiveShadow = true;
+        poleMesh.castShadow = true;
+        scene.add(poleMesh);
+
+        var poleMesh = new THREE.Mesh(poleGeometry, poleMaterial);
+        poleMesh.position.x = 125;
+        poleMesh.position.y = -62;
+        poleMesh.receiveShadow = true;
+        poleMesh.castShadow = true;
+        scene.add(poleMesh);
+
+        var poleMesh = new THREE.Mesh(new THREE.BoxGeometry(255, 5, 5), poleMaterial);
+        poleMesh.position.x = 0;
+        poleMesh.position.y = 125;
+        poleMesh.receiveShadow = true;
+        poleMesh.castShadow = true;
+        scene.add(poleMesh);
+
+        var pg = new THREE.BoxGeometry(10, 10, 10);
+        var pgMesh = new THREE.Mesh(pg, poleMaterial);
+        pgMesh.position.x = 125;
+        pgMesh.position.y = -250;
+        pgMesh.receiveShadow = true;
+        pgMesh.castShadow = true;
+        scene.add(pgMesh);
+
+        var pgMesh = new THREE.Mesh(pg, poleMaterial);
+        pgMesh.position.x = -125;
+        pgMesh.position.y = -250;
+        pgMesh.receiveShadow = true;
+        pgMesh.castShadow = true;
+        scene.add(pgMesh);
+
+        renderer.render(scene, camera);
+
+        //var cameraConstrol = new CameraConstrol(camera, renderer.domElement);
+
+        animate();
+        function render(){
+          var p = cloth.particles;
+          for ( var i = 0, il = p.length; i < il; i ++ ) {
+
+            clothGeometry.vertices[ i ].copy( p[ i ].position );
+
+          }
+
+          clothGeometry.computeFaceNormals();
+          clothGeometry.computeVertexNormals();
+
+          clothGeometry.normalsNeedUpdate = true;
+          clothGeometry.verticesNeedUpdate = true;
+
+          camera.lookAt(scene.position);
+          renderer.render(scene, camera);
+        }
+
+        function animate(){
+          var time = Date.now();
+
+          var windStrength = Math.cos( time / 7000 ) * 20 + 40;
+          
+          windForce.set( Math.sin( time / 2000 ), Math.cos( time / 3000 ), Math.sin( time / 1000 ) )
+          windForce.normalize()
+          windForce.multiplyScalar( windStrength );
+          simulate( time );
+
+          render();
+          requestAnimationFrame(animate);
+        }
+
+      }
+
+    </script>
+  </body>
+</html>

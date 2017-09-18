@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    function init(){
+      var camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1000 );
+      camera.position.set(0, 0, 500);
+
+      var scene = new THREE.Scene();
+
+      var renderer = new THREE.WebGLRenderer();
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      var boxGeometry = new THREE.BoxGeometry(200, 200, 200, 2, 2, 2);
+      var material = new THREE.MeshBasicMaterial({color: 0xfefefe, wireframe: true, opacity: 0.5});
+      var mesh = new THREE.Mesh(boxGeometry, material);
+
+      var faceNormalsHelper = new THREE.FaceNormalsHelper( mesh, 10 );
+      mesh.add( faceNormalsHelper );
+      var vertexNormalsHelper = new THREE.VertexNormalsHelper( mesh, 10 );
+      mesh.add( vertexNormalsHelper );
+      scene.add(mesh)
+
+      renderer.render(scene, camera);
+
+      function animate(){
+
+      }
+    }
+
+
+    window.addEventListener('load', init, false);
+  </script>
+</body>
+</html>
