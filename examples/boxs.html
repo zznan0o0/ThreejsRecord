@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../public/three.min.js"></script>
+  <script type="text/javascript" src="../public/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+ 
+
+  var KSRender = function(){
+    this.init();
+  }
+
+  KSRender.prototype = {
+    constructor: KSRender,
+
+    init: function(){
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+      this.camera.position.z = 50;
+      document.body.appendChild(this.renderer.domElement);
+      this.scene.add(this.camera);
+
+      this.controller();
+
+      window.addEventListener('resize', this.resize.bind(this), false);
+      this.animate();
+      
+    },
+
+    controller: function(){
+      var controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
+      controls.maxPolarAngle = Math.PI * 0.5;
+      controls.minDistance = 1;
+      controls.maxDistance = 7500;
+    },
+
+    animate_fn: [],
+
+    addAnimate: function(fn){
+      this.animate_fn.push(fn);
+    },
+
+    animate: function(){
+      for(var i = 0; i < this.animate_fn.length; i ++){
+        this.animate_fn[i]();
+      }
+
+      this.render();
+      requestAnimationFrame(this.animate.bind(this));
+    },
+
+    camera: new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1000 ),
+
+    renderer: new THREE.WebGLRenderer(),
+
+    scene: new THREE.Scene(),
+
+    add: function(obj){
+      this.scene.add(obj);
+    },
+
+    render: function(){
+      this.renderer.render(this.scene, this.camera);
+    },
+
+    resize: function(){
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.render();
+    }
+  }
+
+
+  var ksRender = new KSRender();
+
+  var Wall1, Wall2, Wall3, Wall4;
+  function createWall(){
+    var wall; 
+    var material = new THREE.MeshBasicMaterial( {color: 0x8a99ac} );
+    var wall = new THREE.RingGeometry(6, 10, 4);
+    Wall1 = new THREE.Mesh(wall, material);
+    Wall1.rotation.z = 0.25 * Math.PI;
+    Wall1.position.z = -7;
+    ksRender.add(Wall1)
+
+    wall = new THREE.RingGeometry(6, 10, 4);
+    Wall2 = new THREE.Mesh(wall, material);
+    Wall2.rotation.z = 0.25 * Math.PI;
+
+    Wall2.rotation.y = 0.5 * Math.PI;
+    Wall2.position.x = 7;
+    ksRender.add(Wall2)
+
+    wall = new THREE.RingGeometry(6, 10, 4);
+    Wall3 = new THREE.Mesh(wall, material);
+    Wall3.rotation.z = 0.25 * Math.PI;
+
+    Wall3.rotation.y = 0.5 * Math.PI;
+    Wall3.position.x = -7;
+    ksRender.add(Wall3);
+
+    var wall = new THREE.RingGeometry(6, 10, 4);
+    Wall4 = new THREE.Mesh(wall, material);
+    Wall4.rotation.z = 0.25 * Math.PI;
+    Wall4.position.z = 7;
+    ksRender.add(Wall4)
+  }
+
+  var glass = [];
+  function createGlass(){
+    //PlaneBufferGeometry
+    var material, glassG;
+    material = new THREE.MeshBasicMaterial({color: 0x06734a, opacity: 0.3, transparent: true});
+
+    glassG = new THREE.PlaneGeometry( 8.5, 8.5, 1, 1);
+    glass[0] = new THREE.Mesh(glassG, material);
+    console.log(glass[0])
+    glass[0].position.z = 7;
+    ksRender.add(glass[0]);
+
+    glassG = new THREE.PlaneGeometry( 8.5, 8.5, 1, 1);
+    glass[1] = new THREE.Mesh(glassG, material);
+    glass[1].position.z = -7;
+    ksRender.add(glass[1]);
+
+    glassG = new THREE.PlaneGeometry( 8.5, 8.5, 1, 1);
+    glass[2] = new THREE.Mesh(glassG, material);
+    glass[2].position.x = -7;
+    glass[2].rotation.y = 0.5 * Math.PI;
+    ksRender.add(glass[2]);
+
+    glassG = new THREE.PlaneGeometry( 8.5, 8.5, 1, 1);
+    glass[3] = new THREE.Mesh(glassG, material);
+    glass[3].position.x = 7;
+    glass[3].rotation.y = 0.5 * Math.PI;
+    ksRender.add(glass[3]);
+
+  }
+
+  createWall();
+  createGlass();
+
+  var group = new THREE.Group();
+  group.add(Wall1);
+  group.add(Wall2);
+  group.add(Wall3);
+  group.add(Wall4);
+
+  console.log(glass)
+  for(var i = 0; i < glass.length; i++){
+    group.add(glass[i]);
+  }
+
+  ksRender.add(group)
+
+  /*ksRender.addAnimate(function(){
+    group.rotation.y += 0.01;
+  })*/
+
+  </script>
+</body>
+</html>
