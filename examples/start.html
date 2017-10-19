@@ -12,34 +12,34 @@
 <body>
   <script type="text/javascript">
   var scene = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+  var camera = new THREE.PerspectiveCamera( 75, 1024 / 1024, 0.1, 1000 );
   var renderer = new THREE.WebGLRenderer();
   //设置renderer画布大小
-  renderer.setSize(window.innerWidth, window.innerHeight, true);
-  document.body.appendChild(renderer.domElement);
+  renderer.setSize(1024, 1024, true);
+  //document.body.appendChild(renderer.domElement);
 
   var geometry = new THREE.BoxGeometry(1, 1, 1);
   //var material = new THREE.MeshBasicMaterial( {color: 0x00ff00});
-  var materials = [];
+  /*var materials = [];
   materials.push(new THREE.MeshBasicMaterial( {color: 0xFF0000} ))
   materials.push(new THREE.MeshBasicMaterial( {color: 0xFBFF00} ))
   materials.push(new THREE.MeshBasicMaterial( {color: 0x0008FF} ))
   materials.push(new THREE.MeshBasicMaterial( {color: 0x33FF00} ))
   materials.push(new THREE.MeshBasicMaterial( {color: 0x00DCFF} ))
-  materials.push(new THREE.MeshBasicMaterial( {color: 0x0400FF} ))
-  var cube = new THREE.Mesh( geometry, materials);
+  materials.push(new THREE.MeshBasicMaterial( {color: 0x0400FF} ))*/
+  var cube = new THREE.Mesh( geometry);
 
   scene.add(cube);
   camera.position.z = 5;
 
-  function animate() {
+  /*function animate() {
     cube.rotation.x += 0.01;
     cube.rotation.y += 0.01;
     requestAnimationFrame( animate );
     renderer.render( scene, camera );
   }
-  animate();
-
+  animate();*/
+  renderer.render( scene, camera );
 
   </script>
 </body>

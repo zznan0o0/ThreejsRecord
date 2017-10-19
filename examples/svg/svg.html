@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+  <script type="text/javascript" src="../../public/loaders/SVGLoader.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+  var camera, scene, renderer, mesh, texture, geometry, material, callback;
+
+  camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+  camera.position.z = 400;
+  camera.position.y= -400;
+  scene = new THREE.Scene();
+  var svgloader = new THREE.SVGLoader();
+  svgloader.load('./cluster_0.svg', function(svg){
+    texture = new THREE.TextureLoader().load('./cluster_0.svg');
+    texture2 = new THREE.TextureLoader().load('./a.png');
+    //0.32,0.39      0.7, 0.9
+    var stone = [new THREE.Vector2(0.385, 0.29), new THREE.Vector2(0.385, 0.17), new THREE.Vector2(0.43, 0.17), new THREE.Vector2(0.43, 0.29)]; 
+
+    geometry = new THREE.BoxGeometry(2000, 1200, 200);
+
+    /*geometry.faceVertexUvs[0] = []; 
+    geometry.faceVertexUvs[0][0] = [ stone[0], stone[1], stone[3] ];  
+    geometry.faceVertexUvs[0][1] = [ stone[1], stone[2], stone[3] ];
+    geometry.faceVertexUvs[0][2] = [ stone[0], stone[1], stone[3] ];  
+    geometry.faceVertexUvs[0][3] = [ stone[1], stone[2], stone[3] ];
+    geometry.faceVertexUvs[0][4] = [ stone[0], stone[1], stone[3] ];  
+    geometry.faceVertexUvs[0][5] = [ stone[1], stone[2], stone[3] ];
+    geometry.faceVertexUvs[0][6] = [ stone[0], stone[1], stone[3] ];  
+    geometry.faceVertexUvs[0][7] = [ stone[1], stone[2], stone[3] ];  
+    geometry.faceVertexUvs[0][8] = [ stone[0], stone[1], stone[3] ];  
+    geometry.faceVertexUvs[0][9] = [ stone[1], stone[2], stone[3] ];
+    geometry.faceVertexUvs[0][10] = [ stone[0], stone[1], stone[3] ];  
+    geometry.faceVertexUvs[0][11] = [ stone[1], stone[2], stone[3] ]; */ 
+    /*material = [];
+    material.push(new THREE.MeshBasicMaterial( {map: texture0} ))
+    material.push(new THREE.MeshBasicMaterial( {map: texture} ))
+    material.push(new THREE.MeshBasicMaterial( {color: 0xFBFF00} ))
+    material.push(new THREE.MeshBasicMaterial( {color: 0xFBFF00} ))
+    material.push(new THREE.MeshBasicMaterial( {map: texture} ))
+    material.push(new THREE.MeshBasicMaterial( {map: texture} ))*/
+    material = new THREE.MeshBasicMaterial( {map: texture, normalScale: [0.01, 0.01]} );
+
+    mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    renderer.render( scene, camera );
+
+    callback = {
+      windowResize: function(){
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      },
+
+      animate: function(){
+        requestAnimationFrame(callback.animate);
+
+        //mesh.rotation.x += 0.00005;
+        //mesh.rotation.y += 0.00005;
+
+        renderer.render(scene, camera);
+      }
+    }
+
+
+    window.addEventListener('resize', callback.windowResize, false);
+    callback.animate();
+  });
+  </script>
+</body>
+</html>
