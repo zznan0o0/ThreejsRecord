@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../myjs/three.min.js"></script>
+  <script type="text/javascript" src="../../myjs/OrbitControls.js"></script>
+  <script type="text/javascript" src="../../myjs/KSRender.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+  var ks = new KSRender();
+  var axisY = new THREE.Vector3( 0, 1, 0 );
+
+  var MainMesh = new THREE.Mesh(new THREE.BoxBufferGeometry(10, 20, 10), new THREE.MeshBasicMaterial({color: 0x4c9972}));
+  ks.add(MainMesh)
+
+  var childMesh = [];
+
+
+  for(var i = 0; i < 4; i++){
+    var group = new THREE.Group();
+
+    for(var j = 0; j < 3; j++){
+      var mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(2, 20, 0.3), new THREE.MeshBasicMaterial({color: 0x4c9986}));
+      childMesh.push(mesh);
+      mesh.position.x = j * 3.33333 - 3.33333;
+      mesh.position.z = 5.1500001;
+      group.add(mesh);
+    }
+
+    group.rotateOnAxis(axisY, Math.PI / 2 * i)
+    ks.add(group);
+  }
+
+  </script>
+</body>
+</html>

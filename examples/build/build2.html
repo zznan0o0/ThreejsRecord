@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>Example 06.01 - Advanced 3D geometries - Convex Hull</title>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+  <script type="text/javascript" src="../../public/QuickHull.js"></script>
+  <script type="text/javascript" src="../../public/geometries/ConvexGeometry.js"></script>
+  <script type="text/javascript" src="../../myjs/OrbitControls.js"></script>
+  <script type="text/javascript" src="../../myjs/KSRender.js"></script>
+  <style>
+    body {
+        margin: 0;
+        overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+<script type="text/javascript">
+var ks = new KSRender();
+var data = {
+  build: {
+    vertices: [{"x": 604825.0511268993, "y": 157350.1559715678}, {"x": 639425.0511268993, "y": 157350.1559715678}, {"x": 639425.0511268993, "y": 122750.1559715677}, {"x": 604825.0511268993, "y": 122750.1559715677}],
+    center_point: {"centerX": 622125.0511268993, "centerY": 140050.15597156773}
+  },
+
+  outer: [
+    {vertices: [{"x": 606525.0511268993, "y": 157550.1559715678}, {"x": 606525.0511268993, "y": 158250.1559715678}, {"x": 614325.0511268992, "y": 158250.1559715678}, {"x": 614325.0511268992, "y": 157550.1559715678}]},
+    {vertices: [{"x": 626925.2887268998, "y": 157550.1559715678}, {"x": 626925.2887268998, "y": 158250.1559715678}, {"x": 617325.2887268998, "y": 158250.1559715678}, {"x": 617325.2887268998, "y": 157550.1559715678}]},
+    {vertices: [{"x": 637725.0517268991, "y": 157550.1559715678}, {"x": 637725.0517268991, "y": 158250.1559715678}, {"x": 629925.0517268992, "y": 158250.1559715678}, {"x": 629925.0517268992, "y": 157550.1559715678}]},
+    {vertices: [{"x": 604625.0511268993, "y": 155650.1559715675}, {"x": 603925.0511268993, "y": 155650.1559715675}, {"x": 603925.0511269002, "y": 147850.1559715676}, {"x": 604625.0511269002, "y": 147850.1559715676}]},
+    {vertices: [{"x": 604625.0511269018, "y": 135249.9183715671}, {"x": 603925.0511269016, "y": 135249.918371567}, {"x": 603925.0511269006, "y": 144849.918371567}, {"x": 604625.0511269006, "y": 144849.9183715671}]},
+    {vertices: [{"x": 604625.0511269029, "y": 124450.1553715678}, {"x": 603925.051126903, "y": 124450.1553715677}, {"x": 603925.0511269021, "y": 132250.1553715676}, {"x": 604625.0511269021, "y": 132250.1553715677}]},
+    {vertices: [{"x": 639625.0511268992, "y": 155650.1559715675}, {"x": 640325.0511268992, "y": 155650.1559715675}, {"x": 640325.0511268983, "y": 147850.1559715676}, {"x": 639625.0511268983, "y": 147850.1559715676}]},
+    {vertices: [{"x": 639625.0511268969, "y": 135249.9183715671}, {"x": 640325.0511268969, "y": 135249.918371567}, {"x": 640325.051126898, "y": 144849.918371567}, {"x": 639625.051126898, "y": 144849.9183715671}]},
+    {vertices: [{"x": 639625.0511268956, "y": 124450.1553715678}, {"x": 640325.0511268956, "y": 124450.1553715677}, {"x": 640325.0511268965, "y": 132250.1553715676}, {"x": 639625.0511268965, "y": 132250.1553715677}]},
+    {vertices: [{"x": 606525.0511268993, "y": 122550.1559715673}, {"x": 606525.0511268993, "y": 121850.1559715673}, {"x": 614325.0511268992, "y": 121850.1559715673}, {"x": 614325.0511268992, "y": 122550.1559715673}]},
+    {vertices: [{"x": 626925.2887268998, "y": 122550.1559715673}, {"x": 626925.2887268998, "y": 121850.1559715673}, {"x": 617325.2887268998, "y": 121850.1559715673}, {"x": 617325.2887268998, "y": 122550.1559715673}]},
+    {vertices: [{"x": 637725.0517268991, "y": 122550.1559715673}, {"x": 637725.0517268991, "y": 121850.1559715673}, {"x": 629925.0517268992, "y": 121850.1559715673}, {"x": 629925.0517268992, "y": 122550.1559715673}]},
+  ]
+}
+
+var scale = 100 / data.build.center_point.centerX;
+
+function cv(x, y, z){
+  return new THREE.Vector3( x, y, z );
+}
+var h = 5;
+function createPoint(data, c){
+  var points = [];
+  data.forEach(function(item){
+    var w = (item['x'] - c.centerX) * scale,
+        l = (item['y'] - c.centerY) * scale;
+    s = cv(w, h * 2, l);
+    x = cv(w, -h * 2, l);
+    points.push(s);
+    points.push(x);
+  })
+
+  return points;
+}
+
+var buildPonits = createPoint(data.build.vertices, data.build.center_point);
+var loader = new THREE.TextureLoader();
+var texture = loader.load('../textures/crate.gif');
+var material = new THREE.MeshBasicMaterial({map: texture});
+
+var mesh = new THREE.Mesh(new THREE.ConvexGeometry(buildPonits));
+ks.add(mesh)
+
+data.outer.forEach(function(item){
+  var outerP = createPoint(item.vertices, data.build.center_point);
+  var mesh = new THREE.Mesh(new THREE.ConvexGeometry(outerP));
+  ks.add(mesh)
+})
+</script>
+</body>
+</html>

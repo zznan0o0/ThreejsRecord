@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../myjs/three.min.js"></script>
+  <script type="text/javascript" src="../../myjs/OrbitControls.js"></script>
+  <script type="text/javascript" src="../../myjs/KSRender.js"></script>
+</head>
+<body>
+  <script type="text/javascript">
+  function getData(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', './f_DEWH.json', true);
+
+    xhr.send();
+
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState == 4 && xhr.status == 200 || xhr.status == 0){
+        var data = xhr.responseText;
+        jsonData = JSON.parse(data);
+
+        var layerBuilding = [], layerOuter = [];
+        jsonData.entities.forEach(function(item){
+          if(item.layer === '3T_WOOD'){
+            if(item.shape){
+              layerBuilding.push(item);
+            }
+
+            if(item.lineType == 'DASH'){
+              layerOuter.push(JSON.stringify(item));
+            }
+          }
+        })
+        console.log(layerOuter)
+
+        var build = getMaxBuildingLine(layerBuilding);
+        var buildMaxMinXY = getMaxMinXY(build.vertices);
+        var direction = attributeDirection(layerOuter, buildMaxMinXY);
+        var outerRatio = ratioAxisWH(direction, getMaxMinXY(build.vertices));
+        var buildWH = getBuilingdWH(build.vertices);
+
+        createBuild(buildWH, outerRatio)
+      }
+    }
+  }
+  
+  function createBuild(buildWH, outerRatio){
+    var ks = new KSRender();
+    var axisY = new THREE.Vector3( 0, 1, 0 );
+    var w = 100, h = 100 * buildWH.height / buildWH.width;
+    ks.camera.position.z = 500;
+    var MainMesh = new THREE.Mesh(new THREE.BoxBufferGeometry(w, w*2, h), new THREE.MeshBasicMaterial({color: 0x4c9972}));
+    ks.add(MainMesh)
+
+
+    var northPlane = new THREE.Group(), 
+        southPlane = new THREE.Group(),
+        westPlane = new THREE.Group(),
+        eastPlane = new THREE.Group();
+    
+    var outerMaterial = new THREE.MeshBasicMaterial({color: 0x4c9986});
+    outerRatio.north.forEach(function(item){
+      var mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(w * item.widthRatio, w*2, w * item.heightRatio), outerMaterial);
+      mesh.position.x = item.axisRatio * w - w / 2;
+      mesh.position.z = -(w + w * item.heightRatio) / 2  - 0.00001;
+      northPlane.add(mesh);
+    })
+
+    ks.add(northPlane);
+
+    outerRatio.south.forEach(function(item){
+      var mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(w * item.widthRatio, w*2, w * item.heightRatio), outerMaterial);
+      mesh.position.x = item.axisRatio * w - w / 2;
+      mesh.position.z = (w + w * item.heightRatio) / 2  + 0.00001;
+      southPlane.add(mesh);
+    })
+
+    ks.add(southPlane);
+
+    outerRatio.west.forEach(function(item){
+      var mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(h * item.widthRatio, h*2, h * item.heightRatio), outerMaterial);
+      mesh.position.x = item.axisRatio * h - h / 2;
+      mesh.position.z = -(h + h * item.heightRatio) / 2  - 0.00001;
+      westPlane.add(mesh);
+    })
+
+    westPlane.rotateOnAxis(axisY, Math.PI*2 * 0.75)
+    ks.add(westPlane);
+
+    outerRatio.east.forEach(function(item){
+      var mesh = new THREE.Mesh(new THREE.BoxBufferGeometry(h * item.widthRatio, h*2, h * item.heightRatio), outerMaterial);
+      mesh.position.x = item.axisRatio * h - h / 2;
+      mesh.position.z = (h + h * item.heightRatio) / 2  + 0.00001;
+      eastPlane.add(mesh);
+    })
+
+    eastPlane.rotateOnAxis(axisY, Math.PI*2 * 0.75)
+    ks.add(eastPlane);
+
+  }
+
+  function getBuilingdWH(vertices){
+    var w = Math.sqrt(Math.pow(vertices[0].x - vertices[1].x, 2) + Math.pow(vertices[0].y - vertices[1].y, 2));
+    var h =  Math.sqrt(Math.pow(vertices[1].x - vertices[2].x, 2) + Math.pow(vertices[1].y - vertices[2].y, 2));
+    return {width: w, height: h};
+  }
+
+  function getMaxPoint(vertices){
+    var maxX = vertices[0].x, maxY = vertices[0].y;
+    vertices.forEach(function(item){
+      maxX = Math.max(item.x, maxX);
+      maxY = Math.max(item.y, maxY);
+    })
+
+    return {x: maxX, y: maxY}
+  }
+
+  function getMaxBuildingLine(data){
+    var max = data[0];
+    for(var i = 0; i < data.length; i++){
+      var maxPoint = getMaxPoint(max.vertices);
+      var nowPoint = getMaxPoint(data[0].vertices);
+
+      if(maxPoint.x < nowPoint.x){
+        max = data[i];
+      }
+    }
+    return max;
+  }
+
+  function getMaxMinXY(vertices){
+    var maxX = minX = vertices[0].x, maxY = minY = vertices[0].y;
+    vertices.forEach(function(item){
+      maxX = Math.max(item.x, maxX);
+      minX = Math.min(item.x, minX);
+      maxY = Math.max(item.y, maxY);
+      minY = Math.min(item.y, minY);
+    })
+
+    return {maxX: maxX, minX: minX, maxY: maxY, minY: minY}
+  }
+
+  function attributeDirection(data, maxMinXY){
+    var direction = {
+      north: [],
+      south: [],
+      west: [],
+      east: []
+    }
+
+    data.forEach(function(item){
+      if(item.vertices[0].x <= maxMinXY.minX){
+        direction.west.push(item);
+      }
+      else if(item.vertices[0].x >= maxMinXY.maxX){
+        direction.east.push(item);
+      }
+      else if(item.vertices[0].y <= maxMinXY.minY){
+        direction.south.push(item);
+      }
+      else if(item.vertices[0].y >= maxMinXY.maxY){
+        direction.north.push(item);
+      }
+    })
+
+    return direction;
+  }
+
+  function ratioAxisWH(direction, buildMaxMinXY){
+    var direction2 = {
+      north: [],
+      south: [],
+      west: [],
+      east: []
+    }
+
+    var vectorX = buildMaxMinXY.maxX - buildMaxMinXY.minX;
+    var vectorY = buildMaxMinXY.maxY - buildMaxMinXY.minY;
+
+    direction.north.forEach(function(item){
+      var outerXY = getMaxMinXY(item.vertices);
+      var outerVectorX = outerXY.maxX - outerXY.minX;
+      var outerVectorY = outerXY.maxY - outerXY.minY;
+      var outerXToBuildX = outerXY.minX - buildMaxMinXY.minX;
+      var axisRatio = (outerVectorX / 2 + outerXToBuildX) / vectorX,
+          wRatio = outerVectorX / vectorX,
+          hRatio = outerVectorY / vectorY;
+
+      direction2.north.push({axisRatio: axisRatio, widthRatio: wRatio, heightRatio: hRatio});
+    })
+
+    direction.south.forEach(function(item){
+      var outerXY = getMaxMinXY(item.vertices);
+      var outerVectorX = outerXY.maxX - outerXY.minX;
+      var outerVectorY = outerXY.maxY - outerXY.minY;
+      var outerXToBuildX = outerXY.minX - buildMaxMinXY.minX;
+      var axisRatio = (outerVectorX / 2 + outerXToBuildX) / vectorX,
+          wRatio = outerVectorX / vectorX,
+          hRatio = outerVectorY / vectorY;
+
+      direction2.south.push({axisRatio: axisRatio, widthRatio: wRatio, heightRatio: hRatio});
+    })
+
+    direction.west.forEach(function(item){
+      var outerXY = getMaxMinXY(item.vertices);
+      var outerVectorX = outerXY.maxX - outerXY.minX;
+      var outerVectorY = outerXY.maxY - outerXY.minY;
+      var outerYToBuildY = outerXY.minY - buildMaxMinXY.minY;
+      var axisRatio = (outerVectorY / 2 + outerYToBuildY) / vectorY,
+          wRatio = outerVectorY / vectorY,
+          hRatio = outerVectorX / vectorX;
+
+      direction2.west.push({axisRatio: axisRatio, widthRatio: wRatio, heightRatio: hRatio});
+    })
+
+    direction.east.forEach(function(item){
+      var outerXY = getMaxMinXY(item.vertices);
+      var outerVectorX = outerXY.maxX - outerXY.minX;
+      var outerVectorY = outerXY.maxY - outerXY.minY;
+      var outerYToBuildY = outerXY.minY - buildMaxMinXY.minY;
+      var axisRatio = (outerVectorY / 2 + outerYToBuildY) / vectorY,
+          wRatio = outerVectorY / vectorY,
+          hRatio = outerVectorX / vectorX;
+
+      direction2.east.push({axisRatio: axisRatio, widthRatio: wRatio, heightRatio: hRatio});
+    })
+
+    return direction2;
+  }
+
+  function main(){
+    getData();
+  }
+
+  window.onload = main;
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+create table tb_building_size(
+    sn int auto_increment not null,
+    user_id varchar(100) not null,
+    file_id varchar(100) not null,
+    project_id varchar(100) not null,
+    building_number varchar(25) not null,
+    vertices varchar(3000) not null,
+    center_point varchar(1024) not null,
+    height float not null,
+    status varchar(25) not null,
+    primary key(sn)
+) charset=utf8;
+
+create table tb_building_projection(
+    sn int auto_increment not null,
+    user_id varchar(100) not null,
+    file_id varchar(100) not null,
+    project_id varchar(100) not null,
+    building_number varchar(25) not null,
+    vertices varchar(3000) not null,
+    height float not null,
+    primary key(sn)
+) charset=utf8;

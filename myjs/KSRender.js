@@ -9,7 +9,7 @@ KSRender.prototype = {
   init: function(){
     this.camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1000 ),
 
-    this.renderer = new THREE.WebGLRenderer(),
+    this.renderer = new THREE.WebGLRenderer({antialias: true}),
 
     this.scene = new THREE.Scene(),
 
@@ -18,7 +18,8 @@ KSRender.prototype = {
     this.cache = THREE.Cache;
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    //似乎影响性能先注释
+    //this.renderer.setPixelRatio(window.devicePixelRatio);
     this.camera.position.z = 50;
     document.body.appendChild(this.renderer.domElement);
     this.scene.add(this.camera);

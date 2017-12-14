@@ -19,8 +19,7 @@
   
 
   scene = new THREE.Scene();
-    texture = new THREE.TextureLoader().load('./layer9_b0.png');
-    texture2 = new THREE.TextureLoader().load('./a.png');
+    texture = new THREE.TextureLoader().load('a.png');
     //0.32,0.39      0.7, 0.9
     var stone = [new THREE.Vector2(0.385, 0.29), new THREE.Vector2(0.385, 0.17), new THREE.Vector2(0.43, 0.17), new THREE.Vector2(0.43, 0.29)]; 
 
@@ -43,7 +42,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    renderer.setClearColor(0xffffff)
+    renderer.setClearColor(0x000000)
     var controls = new THREE.OrbitControls( camera, renderer.domElement );
     //controls.maxPolarAngle = Math.PI * 0.5;
     //controls.minDistance = 1000;

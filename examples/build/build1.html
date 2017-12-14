@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title> start threejs</title>
+  <style type="text/css">
+    body{ margin: 0; overflow: hidden;}
+  </style>
+  <script type="text/javascript" src="../../public/three.min.js"></script>
+</head>
+<body>
+<div>
+  <a id="c1" href=""></a><a id="c2" href=""></a><a id="c3" href=""></a>
+</div>
+  <script type="text/javascript">
+    var img_n = [
+      2, 5, 8, 11,
+      1, 4, 7, 10,
+      0, 3, 6, 9
+    ]
+
+    var callback = {
+      windowResize: function(build){
+        build.camera.aspect = window.innerWidth / window.innerHeight;
+        build.camera.updateProjectionMatrix();
+
+        build.renderer.setSize(window.innerWidth * 0.33, window.innerHeight);
+      },
+
+      animate: function(build){
+        requestAnimationFrame(function(){
+          callback.animate(build)
+        });
+
+        //mesh.rotation.x += 0.00005;
+        //mesh.rotation.y += 0.00005;
+        build.renderer.render(build.scene, build.camera);
+      }
+    }
+
+    var build = [{container: document.getElementById("c1")}, {container: document.getElementById("c2")}, {container: document.getElementById("c3")}]
+
+    for(var i = 0; i < build.length; i++){
+      build[i].camera = new THREE.PerspectiveCamera( 70, window.innerWidth * 0.33 / window.innerHeight, 1, 1000 );
+      build[i].camera.position.z = 250;
+      build[i].scene = new THREE.Scene();
+      build[i].renderer = new THREE.WebGLRenderer({antialias: true});
+
+      build[i].container.appendChild(build[i].renderer.domElement);
+      build[i].renderer.setPixelRatio(window.devicePixelRatio);
+      build[i].renderer.setSize(window.innerWidth * 0.33, window.innerHeight);
+      
+
+      var geometry = new THREE.BoxGeometry(200, 400, 200);
+
+      var src = "http://192.168.10.148/public/cluster/u_beMw-p_MHG1-f_d0Pnln%2812%29/large_";
+      var num = 2-i;
+      var img = []
+
+      for(var j = 0; j <4; j++){
+        img.push(new THREE.TextureLoader().load(src + img_n[i * 4 + j] + '.png'));
+      }
+      console.log(img)
+      var material = [];
+
+      material.push(new THREE.MeshBasicMaterial( {map: img[0], transparent: false, color: 0xffffff, depthTest: false} ))
+      material.push(new THREE.MeshBasicMaterial( {map: img[1], transparent: false, color: 0xffffff, depthTest: false} ))
+      material.push(new THREE.MeshBasicMaterial( {color: 0xcccccc, transparent: false, depthTest: false} ))
+      material.push(new THREE.MeshBasicMaterial( {color: 0xcccccc, transparent: false, depthTest: false} ))
+      material.push(new THREE.MeshBasicMaterial( {map: img[2], transparent: false, color: 0xffffff, depthTest: false} ))
+      material.push(new THREE.MeshBasicMaterial( {map: img[3], transparent: false, color: 0xffffff, depthTest: false} ))
+      mesh = new THREE.Mesh(geometry, material);
+      build[i].scene.add(mesh);
+      build[i].renderer.render(build[i].scene, build[i].camera)
+
+      window.addEventListener('resize', function(){
+        callback.windowResize(build[i])
+      }, false);
+
+      callback.animate(build[i]);
+    }
+
+    
+  </script>
+</body>
+</html>
